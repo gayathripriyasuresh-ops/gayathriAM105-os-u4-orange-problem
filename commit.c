@@ -202,7 +202,7 @@ int commit_create(ObjectID *tree, const char *message, ObjectID *commit_id) {
     hash_to_hex(tree, tree_hex);
     len += sprintf(buffer + len, "tree %s\n", tree_hex);
 
-    // author (simple)
+    // author
     len += sprintf(buffer + len, "author Gayathri\n");
 
     // message
@@ -211,6 +211,16 @@ int commit_create(ObjectID *tree, const char *message, ObjectID *commit_id) {
     // write commit object
     if (object_write(OBJ_COMMIT, buffer, len, commit_id) != 0)
         return -1;
+
+    // update HEAD
+    FILE *f = fopen(".pes/HEAD", "w");
+    if (!f) return -1;
+
+    char commit_hex[HASH_HEX_SIZE + 1];
+    hash_to_hex(commit_id, commit_hex);
+
+    fprintf(f, "%s\n", commit_hex);
+    fclose(f);
 
     return 0;
 }
