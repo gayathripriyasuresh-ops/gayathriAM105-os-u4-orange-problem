@@ -131,31 +131,60 @@ int tree_serialize(const Tree *tree, void **data_out, size_t *len_out) {
 // Returns 0 on success, -1 on error.
  int tree_from_index(ObjectID *id_out) {
     Index index;
-
-    // load index
     if (index_load(&index) != 0) return -1;
 
     Tree tree;
-    tree.count = index.count;
+    tree.count = 0;
 
     for (int i = 0; i < index.count; i++) {
-        tree.entries[i].mode = index.entries[i].mode;
-        tree.entries[i].hash = index.entries[i].id;
+        // check if file is in subdirectory
+        char *slash = strchr(index.entries[i].path, '/');
 
-        // take filename (no directories yet)
-        const char *name = strrchr(index.entries[i].path, '/');
-        if (name) name++; else name = index.entries[i].path;
+        if (!slash) {
+            // normal file
+            tree.entries[tree.count].mode = index.entries[i].mode;
+            tree.entries[tree.count].hash = index.entries[i].id;
 
-        strncpy(tree.entries[i].name, name, sizeof(tree.entries[i].name));
-        tree.entries[i].name[sizeof(tree.entries[i].name) - 1] = '\0';
+            strncpy(tree.entries[tree.count].name,
+                    index.entries[i].path,
+                    sizeof(tree.entries[tree.count].name));
+
+            tree.count++;
+        }
+        else {
+            // directory case (basic handling: ignore deeper nesting for now)
+            char dirname[256];
+            int len = slash - index.entries[i].path;
+            strncpy(dirname, index.entries[i].path, len);
+            dirname[len] = '\0';
+
+            // check if already added
+            int found = 0;
+            for (int j = 0; j < tree.count; j++) {
+                if (strcmp(tree.entries[j].name, dirname) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+
+            if (!found) {
+                tree.entries[tree.count].mode = MODE_DIR;
+
+                // fake hash for now (simplification)
+                memset(tree.entries[tree.count].hash.hash, 0, HASH_SIZE);
+
+                strncpy(tree.entries[tree.count].name, dirname,
+                        sizeof(tree.entries[tree.count].name));
+
+                tree.count++;
+            }
+        }
     }
 
-    // serialize
     void *data;
     size_t len;
     if (tree_serialize(&tree, &data, &len) != 0) return -1;
 
-    // write object
     if (object_write(OBJ_TREE, data, len, id_out) != 0) return -1;
 
     free(data);
