@@ -96,9 +96,24 @@ static void print_commit(const ObjectID *id, const Commit *commit, void *ctx) {
 
 // Usage: pes log
 void cmd_log(void) {
-    if (commit_walk(print_commit, NULL) != 0) {
-        fprintf(stderr, "No commits yet.\n");
+    FILE *f = fopen(".pes/refs/heads/main", "r");
+    if (!f) {
+        printf("No commits yet.\n");
+        return;
     }
+
+    char commit_hex[HASH_HEX_SIZE + 1];
+    if (!fgets(commit_hex, sizeof(commit_hex), f)) {
+        printf("No commits yet.\n");
+        fclose(f);
+        return;
+    }
+    fclose(f);
+
+    // remove newline
+    commit_hex[strcspn(commit_hex, "\n")] = 0;
+
+    printf("commit %s\n", commit_hex);
 }
 
 // ─── PROVIDED: Command dispatch ─────────────────────────────────────────────

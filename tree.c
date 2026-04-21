@@ -15,7 +15,7 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
+#include "index.h"
 // ─── Mode Constants ─────────────────────────────────────────────────────────
 
 #define MODE_FILE      0100644
@@ -143,7 +143,7 @@ int tree_serialize(const Tree *tree, void **data_out, size_t *len_out) {
         if (!slash) {
             // normal file
             tree.entries[tree.count].mode = index.entries[i].mode;
-            tree.entries[tree.count].hash = index.entries[i].id;
+            tree.entries[tree.count].hash = index.entries[i].hash;
 
             strncpy(tree.entries[tree.count].name,
                     index.entries[i].path,

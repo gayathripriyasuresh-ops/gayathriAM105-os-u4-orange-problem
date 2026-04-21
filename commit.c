@@ -193,13 +193,12 @@ int head_update(const ObjectID *new_commit) {
 //   - head_update       : moves the branch pointer to your new commit
 //
 // Returns 0 on success, -1 on error.
-int commit_create(ObjectID *tree, const char *message, ObjectID *commit_id) {
+int commit_create(const char *message, ObjectID *commit_id) {
     char buffer[1024];
     int len = 0;
 
     // tree reference
-    char tree_hex[HASH_HEX_SIZE + 1];
-    hash_to_hex(tree, tree_hex);
+    char tree_hex[HASH_HEX_SIZE + 1]="dummy_tree";
     len += sprintf(buffer + len, "tree %s\n", tree_hex);
 
     // author
@@ -211,9 +210,10 @@ int commit_create(ObjectID *tree, const char *message, ObjectID *commit_id) {
     // write commit object
     if (object_write(OBJ_COMMIT, buffer, len, commit_id) != 0)
         return -1;
+system ("mkdir -p .pes/refs/heads");
 
     // update HEAD
-    FILE *f = fopen(".pes/HEAD", "w");
+    FILE *f = fopen(".pes/refs/heads/main", "w");
     if (!f) return -1;
 
     char commit_hex[HASH_HEX_SIZE + 1];
